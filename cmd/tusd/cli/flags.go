@@ -12,75 +12,76 @@ import (
 )
 
 var Flags struct {
-	HttpHost                         string
-	HttpPort                         string
-	HttpSock                         string
-	EnableH2C                        bool
-	MaxSize                          int64
-	UploadDir                        string
-	Basepath                         string
-	ShowGreeting                     bool
-	DisableDownload                  bool
-	DisableTermination               bool
-	DisableCors                      bool
-	CorsAllowOrigin                  string
-	CorsAllowCredentials             bool
-	CorsAllowMethods                 string
-	CorsAllowHeaders                 string
-	CorsMaxAge                       string
-	CorsExposeHeaders                string
-	NetworkTimeout                   time.Duration
-	S3Bucket                         string
-	S3ObjectPrefix                   string
-	S3Endpoint                       string
-	S3PartSize                       int64
-	S3MaxBufferedParts               int64
-	S3DisableContentHashes           bool
-	S3DisableSSL                     bool
-	S3ConcurrentPartUploads          int
-	GCSBucket                        string
-	GCSObjectPrefix                  string
-	AzStorage                        string
-	AzContainerAccessType            string
-	AzBlobAccessTier                 string
-	AzObjectPrefix                   string
-	AzEndpoint                       string
-	EnabledHooksString               string
-	PluginHookPath                   string
-	FileHooksDir                     string
-	HttpHooksEndpoint                string
-	HttpHooksForwardHeaders          string
-	HttpHooksRetry                   int
-	HttpHooksBackoff                 time.Duration
-	GrpcHooksEndpoint                string
-	GrpcHooksRetry                   int
-	GrpcHooksBackoff                 time.Duration
-	GrpcHooksSecure                  bool
-	GrpcHooksServerTLSCertFile       string
-	GrpcHooksClientTLSCertFile       string
-	GrpcHooksClientTLSKeyFile        string
-	EnabledHooks                     []hooks.HookType
-	ProgressHooksInterval            time.Duration
-	ShowVersion                      bool
-	ExposeMetrics                    bool
-	MetricsPath                      string
-	ExposePprof                      bool
-	PprofPath                        string
-	PprofBlockProfileRate            int
-	PprofMutexProfileRate            int
-	BehindProxy                      bool
-	VerboseOutput                    bool
-	LogFormat                        string
-	S3TransferAcceleration           bool
-	TLSCertFile                      string
-	TLSKeyFile                       string
-	TLSMode                          string
-	ShutdownTimeout                  time.Duration
-	AcquireLockTimeout               time.Duration
-	FilelockHolderPollInterval       time.Duration
-	FilelockAcquirerPollInterval     time.Duration
-	GracefulRequestCompletionTimeout time.Duration
-	ExperimentalProtocol             bool
+	HttpHost                          string
+	HttpPort                          string
+	HttpSock                          string
+	EnableH2C                         bool
+	MaxSize                           int64
+	UploadDir                         string
+	Basepath                          string
+	ShowGreeting                      bool
+	DisableDownload                   bool
+	DisableTermination                bool
+	DisableCors                       bool
+	CorsAllowOrigin                   string
+	CorsAllowCredentials              bool
+	CorsAllowMethods                  string
+	CorsAllowHeaders                  string
+	CorsMaxAge                        string
+	CorsExposeHeaders                 string
+	NetworkTimeout                    time.Duration
+	S3Bucket                          string
+	S3ObjectPrefix                    string
+	S3Endpoint                        string
+	S3PartSize                        int64
+	S3MaxBufferedParts                int64
+	S3DisableContentHashes            bool
+	S3DisableSSL                      bool
+	S3ConcurrentPartUploads           int
+	GCSBucket                         string
+	GCSObjectPrefix                   string
+	AzStorage                         string
+	AzContainerAccessType             string
+	AzBlobAccessTier                  string
+	AzObjectPrefix                    string
+	AzEndpoint                        string
+	EnabledHooksString                string
+	PluginHookPath                    string
+	FileHooksDir                      string
+	HttpHooksEndpoint                 string
+	HttpHooksForwardHeaders           string
+	HttpHooksRetry                    int
+	HttpHooksBackoff                  time.Duration
+	GrpcHooksEndpoint                 string
+	GrpcHooksRetry                    int
+	GrpcHooksBackoff                  time.Duration
+	GrpcHooksSecure                   bool
+	GrpcHooksServerTLSCertFile        string
+	GrpcHooksClientTLSCertFile        string
+	GrpcHooksClientTLSKeyFile         string
+	GrpcHooksClientTLSKeyFilePassword string
+	EnabledHooks                      []hooks.HookType
+	ProgressHooksInterval             time.Duration
+	ShowVersion                       bool
+	ExposeMetrics                     bool
+	MetricsPath                       string
+	ExposePprof                       bool
+	PprofPath                         string
+	PprofBlockProfileRate             int
+	PprofMutexProfileRate             int
+	BehindProxy                       bool
+	VerboseOutput                     bool
+	LogFormat                         string
+	S3TransferAcceleration            bool
+	TLSCertFile                       string
+	TLSKeyFile                        string
+	TLSMode                           string
+	ShutdownTimeout                   time.Duration
+	AcquireLockTimeout                time.Duration
+	FilelockHolderPollInterval        time.Duration
+	FilelockAcquirerPollInterval      time.Duration
+	GracefulRequestCompletionTimeout  time.Duration
+	ExperimentalProtocol              bool
 }
 
 func ParseFlags() {
@@ -170,9 +171,10 @@ func ParseFlags() {
 		f.IntVar(&Flags.GrpcHooksRetry, "hooks-grpc-retry", 3, "Number of times to retry on a server error or network timeout")
 		f.DurationVar(&Flags.GrpcHooksBackoff, "hooks-grpc-backoff", 1*time.Second, "Wait period before retrying each retry")
 		f.BoolVar(&Flags.GrpcHooksSecure, "hooks-grpc-secure", false, "Enables secure connection via TLS certificates to the specified gRPC endpoint")
-		f.StringVar(&Flags.GrpcHooksServerTLSCertFile, "hooks-grpc-server-tls-certificate", "", "Path to the file containing the TLS certificate of the remote gRPC server")
-		f.StringVar(&Flags.GrpcHooksClientTLSCertFile, "hooks-grpc-client-tls-certificate", "", "Path to the file containing the client certificate for mTLS")
-		f.StringVar(&Flags.GrpcHooksClientTLSKeyFile, "hooks-grpc-client-tls-key", "", "Path to the file containing the client key for mTLS")
+		f.StringVar(&Flags.GrpcHooksServerTLSCertFile, "hooks-grpc-server-tls-certificate", "", "Path to the file containing the TLS certificate of the remote gRPC server. This is used in order to add the gRPC server as trusted.")
+		f.StringVar(&Flags.GrpcHooksClientTLSCertFile, "hooks-grpc-client-tls-certificate", "", "Path to the file containing TLS certificate to be used as client.")
+		f.StringVar(&Flags.GrpcHooksClientTLSKeyFile, "hooks-grpc-client-tls-key", "", "Path to the file containing the key for the Client TLS certificate.")
+		f.StringVar(&Flags.GrpcHooksClientTLSKeyFilePassword, "hooks-grpc-client-tls-key-password", "", "The password for the file containing the key for the Client TLS certificate.")
 	})
 
 	fs.AddGroup("Plugin hook options", func(f *flag.FlagSet) {

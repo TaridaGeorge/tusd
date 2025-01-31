@@ -2,10 +2,10 @@ module github.com/tus/tusd/v2
 
 // Specify the Go version needed for the Heroku deployment
 // See https://github.com/heroku/heroku-buildpack-go#go-module-specifics
-// +heroku goVersion go1.22
+// +heroku goVersion go1.20
 go 1.21.0
 
-toolchain go1.22.7
+toolchain go1.23.3
 
 require (
 	cloud.google.com/go/storage v1.43.0
@@ -29,6 +29,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tus/lockfile v1.2.0
 	github.com/vimeo/go-util v1.4.1
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 	golang.org/x/net v0.28.0
 	google.golang.org/api v0.195.0

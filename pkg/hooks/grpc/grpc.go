@@ -7,7 +7,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -15,20 +17,22 @@ import (
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/tus/tusd/v2/pkg/hooks"
 	pb "github.com/tus/tusd/v2/pkg/hooks/grpc/proto"
+	"github.com/youmark/pkcs8"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type GrpcHook struct {
-	Endpoint                        string
-	MaxRetries                      int
-	Backoff                         time.Duration
-	Client                          pb.HookHandlerClient
-	Secure                          bool
-	ServerTLSCertificateFilePath    string
-	ClientTLSCertificateFilePath    string
-	ClientTLSCertificateKeyFilePath string
+	Endpoint                            string
+	MaxRetries                          int
+	Backoff                             time.Duration
+	Client                              pb.HookHandlerClient
+	Secure                              bool
+	ServerTLSCertificateFilePath        string
+	ClientTLSCertificateFilePath        string
+	ClientTLSCertificateKeyFilePath     string
+	ClientTLSCertificateKeyFilePassword string
 }
 
 func (g *GrpcHook) Setup() error {
@@ -56,14 +60,28 @@ func (g *GrpcHook) Setup() error {
 
 		// If client's TLS certificate and key file paths are provided, use mutual TLS
 		if g.ClientTLSCertificateFilePath != "" && g.ClientTLSCertificateKeyFilePath != "" {
-			// Load the client's TLS certificate and private key
-			clientCert, err := tls.LoadX509KeyPair(g.ClientTLSCertificateFilePath, g.ClientTLSCertificateKeyFilePath)
+			clientCertPEM, err := os.ReadFile(g.ClientTLSCertificateFilePath)
 			if err != nil {
 				return err
 			}
 
-			// Append client certificate to the TLS configuration
-			tlsConfig.Certificates = append(tlsConfig.Certificates, clientCert)
+			clientKeyPEM, err := os.ReadFile(g.ClientTLSCertificateKeyFilePath)
+			if err != nil {
+				return err
+			}
+
+			decryptedKeyPEM, err := decryptPKCS8Key(clientKeyPEM, g.ClientTLSCertificateKeyFilePassword)
+			if err != nil {
+				return fmt.Errorf("failed to decrypt private key: %w", err)
+			}
+			dd := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: decryptedKeyPEM})
+
+			clientCert, err := tls.X509KeyPair(clientCertPEM, dd)
+			if err != nil {
+				return fmt.Errorf("failed to create X509 key pair: %w", err)
+			}
+
+			tlsConfig.Certificates = []tls.Certificate{clientCert}
 		}
 
 		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
@@ -83,6 +101,28 @@ func (g *GrpcHook) Setup() error {
 	}
 	g.Client = pb.NewHookHandlerClient(conn)
 	return nil
+}
+
+// decryptPKCS8Key decrypts a PKCS#8 encrypted private key using the provided password.
+func decryptPKCS8Key(encryptedPEM []byte, password string) ([]byte, error) {
+	// Decode the PEM block
+	block, _ := pem.Decode(encryptedPEM)
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	if block.Type != "ENCRYPTED PRIVATE KEY" {
+		return nil, fmt.Errorf("unexpected PEM block type: %s", block.Type)
+	}
+
+	// Decrypt the key using github.com/youmark/pkcs8
+	decryptedKey, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte(password))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt PKCS#8 private key: %w", err)
+	}
+
+	// Return the decrypted key in DER format
+	return x509.MarshalPKCS8PrivateKey(decryptedKey)
 }
 
 func (g *GrpcHook) InvokeHook(hookReq hooks.HookRequest) (hookRes hooks.HookResponse, err error) {
